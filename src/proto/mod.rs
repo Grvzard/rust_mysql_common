@@ -11,6 +11,7 @@ use std::io;
 use crate::io::ParseBuf;
 
 pub mod codec;
+#[cfg(not(feature = "tokio-codec"))]
 pub mod sync_framed;
 
 /// Text protocol marker.

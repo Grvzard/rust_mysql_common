@@ -375,6 +375,7 @@ impl PacketCodec {
     ///
     /// * `true` - decoded packet was written into the `dst`,
     /// * `false` - `src` did not contain a full packet.
+    #[cfg(not(feature = "tokio-codec"))]
     pub fn decode<T>(&mut self, src: &mut BytesMut, dst: &mut T) -> Result<bool, PacketCodecError>
     where
         T: AsRef<[u8]>,
@@ -384,6 +385,7 @@ impl PacketCodec {
     }
 
     /// Will encode packets into `dst`.
+    #[cfg(not(feature = "tokio-codec"))]
     pub fn encode<T: Buf>(
         &mut self,
         src: &mut T,
@@ -475,6 +477,29 @@ impl PacketCodecInner {
             PacketCodecInner::Plain(codec) => codec.encode(packet, dst, max_allowed_packet),
             PacketCodecInner::Comp(codec) => codec.encode(packet, dst, max_allowed_packet),
         }
+    }
+}
+
+#[cfg(feature = "tokio-codec")]
+impl tokio_util::codec::Decoder for PacketCodec {
+    type Error = PacketCodecError;
+    type Item = BytesMut;
+    fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
+        let mut dst = BytesMut::new();
+        let ok = self.inner.decode(src, &mut dst, self.max_allowed_packet)?;
+        if ok {
+            Ok(Some(dst))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+#[cfg(feature = "tokio-codec")]
+impl<Item: Buf> tokio_util::codec::Encoder<Item> for PacketCodec {
+    type Error = PacketCodecError;
+    fn encode(&mut self, mut item: Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+        self.inner.encode(&mut item, dst, self.max_allowed_packet)
     }
 }
 
@@ -663,7 +688,7 @@ impl CompPacketCodec {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(not(feature = "tokio-codec"), test))]
 mod tests {
     use super::*;
 

@@ -63,6 +63,7 @@ time02 = { package = "time", version = "0.2", default-features = false, features
 time = { version = "0.3", default-features = false, features = [
     "parsing",
 ], optional = true }
+tokio-util = { version = "0.7", optional = true }
 uuid = { version = "1" }
 saturating = "0.1"
 serde = { version = "1", features = ["derive"] }
@@ -102,6 +103,7 @@ default = [
     "binlog",
 ]
 test = ["derive"]
+tokio-codec = ["tokio-util/codec"]
 derive = ["mysql-common-derive"]
 binlog = ["bitvec"]
 nightly = ["test"]
